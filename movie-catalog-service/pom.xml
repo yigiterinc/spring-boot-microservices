@@ -11,7 +11,7 @@
     <groupId>com</groupId>
     <artifactId>movie-catalog-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>movie</name>
+    <name>movie-catalog-service</name>
     <description>Demo project for Spring Boot</description>
     <properties>
         <java.version>11</java.version>
