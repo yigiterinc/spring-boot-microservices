@@ -1,4 +1,4 @@
-package com.moviecatalogservice.resources;
+package com.moviecatalogservice.models;
 
 public class CatalogItem {
 
