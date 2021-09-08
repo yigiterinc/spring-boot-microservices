@@ -1,4 +1,4 @@
-package com.example.ratingsdataservice;
+package com.example.ratingsservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
