@@ -37,13 +37,13 @@ public class MovieCatalogResource {
     public List<CatalogItem> getCatalog(@PathVariable String userId) {
 
         // Get all the movies that this user has rated
-        String ratingsUrl = "http://localhost:8083/ratings/" + userId;
+        String ratingsUrl = "http://ratings-data-service/ratings/" + userId;
         List<Rating> ratings = Objects.requireNonNull(restTemplate.getForObject(ratingsUrl, UserRating.class))
                                         .getRatings();
 
         // Call the movie-info-service to fetch movie metadata, using the id we get from rating service
         List<CatalogItem> catalog = ratings.stream().map(rating -> {
-            String movieDetailsUrl = "http://localhost:8082/movies/" + rating.getMovieId(); // TODO, use service discovery instead
+            String movieDetailsUrl = "http://movie-info-service/movies/" + rating.getMovieId(); // TODO, use service discovery instead
             Movie movie = this.restTemplate.getForObject(movieDetailsUrl, Movie.class);
             return new CatalogItem(movie.getName(), movie.getDescription(), rating.getRating());
         }).collect(Collectors.toList());
