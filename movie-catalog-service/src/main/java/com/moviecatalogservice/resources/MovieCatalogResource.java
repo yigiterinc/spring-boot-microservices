@@ -4,12 +4,15 @@ import com.moviecatalogservice.models.CatalogItem;
 import com.moviecatalogservice.models.Movie;
 import com.moviecatalogservice.models.Rating;
 import com.moviecatalogservice.models.UserRating;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import javax.ws.rs.Path;
+import javax.xml.catalog.Catalog;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +37,7 @@ public class MovieCatalogResource {
      * @return CatalogItem that contains name, description and rating
      */
     @RequestMapping("/{userId}")
+    @HystrixCommand(fallbackMethod = "getFallbackCatalog")
     public List<CatalogItem> getCatalog(@PathVariable String userId) {
 
         // Get all the movies that this user has rated
@@ -50,5 +54,10 @@ public class MovieCatalogResource {
 
         // For each movie ID, call movie info service and get details
         return catalog;
+    }
+
+    // Handle the failure on one of the microsystems, return data from cache or just return some default data
+    public List<CatalogItem> getFallbackCatalog(@PathVariable("userId") String userId) {
+        return Arrays.asList(new CatalogItem("No movie", "",0));
     }
 }
