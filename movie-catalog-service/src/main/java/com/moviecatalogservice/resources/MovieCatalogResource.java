@@ -4,16 +4,14 @@ import com.moviecatalogservice.models.CatalogItem;
 import com.moviecatalogservice.models.Movie;
 import com.moviecatalogservice.models.Rating;
 import com.moviecatalogservice.models.UserRating;
+import com.moviecatalogservice.services.MovieInfoService;
+import com.moviecatalogservice.services.UserRatingService;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.Path;
-import javax.xml.catalog.Catalog;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -25,8 +23,17 @@ public class MovieCatalogResource {
 
     private final RestTemplate restTemplate;
 
-    public MovieCatalogResource(RestTemplate restTemplate) {
+    private final MovieInfoService movieInfoService;
+
+    private final UserRatingService userRatingService;
+
+    public MovieCatalogResource(RestTemplate restTemplate,
+                                MovieInfoService movieInfoService,
+                                UserRatingService userRatingService) {
+
         this.restTemplate = restTemplate;
+        this.movieInfoService = movieInfoService;
+        this.userRatingService = userRatingService;
     }
 
     /**
@@ -37,27 +44,8 @@ public class MovieCatalogResource {
      * @return CatalogItem that contains name, description and rating
      */
     @RequestMapping("/{userId}")
-    @HystrixCommand(fallbackMethod = "getFallbackCatalog")
     public List<CatalogItem> getCatalog(@PathVariable String userId) {
-
-        // Get all the movies that this user has rated
-        String ratingsUrl = "http://ratings-data-service/ratings/" + userId;
-        List<Rating> ratings = Objects.requireNonNull(restTemplate.getForObject(ratingsUrl, UserRating.class))
-                                        .getRatings();
-
-        // Call the movie-info-service to fetch movie metadata, using the id we get from rating service
-        List<CatalogItem> catalog = ratings.stream().map(rating -> {
-            String movieDetailsUrl = "http://movie-info-service/movies/" + rating.getMovieId(); // TODO, use service discovery instead
-            Movie movie = this.restTemplate.getForObject(movieDetailsUrl, Movie.class);
-            return new CatalogItem(movie.getName(), movie.getDescription(), rating.getRating());
-        }).collect(Collectors.toList());
-
-        // For each movie ID, call movie info service and get details
-        return catalog;
-    }
-
-    // Handle the failure on one of the microsystems, return data from cache or just return some default data
-    public List<CatalogItem> getFallbackCatalog(@PathVariable("userId") String userId) {
-        return Arrays.asList(new CatalogItem("No movie", "",0));
+        List<Rating> ratings = userRatingService.getUserRating(userId).getRatings();
+        return ratings.stream().map(movieInfoService::getCatalogItem).collect(Collectors.toList());
     }
 }
