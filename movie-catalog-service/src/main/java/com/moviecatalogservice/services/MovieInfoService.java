@@ -18,6 +18,11 @@ public class MovieInfoService {
     }
 
     @HystrixCommand(fallbackMethod = "getFallbackCatalogItem",
+            threadPoolKey = "movieInfoPool",
+            threadPoolProperties = {
+                @HystrixProperty(name = "coreSize", value = "20"),  // Size of thread pool
+                @HystrixProperty(name = "maxQueueSize", value = "10")   // Waiting in thread queue
+            },
             commandProperties = {
                     // Time to cause timeout
                     @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "2000"),
